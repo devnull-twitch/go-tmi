@@ -1,6 +1,7 @@
 package tmi
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/sirupsen/logrus"
@@ -19,6 +20,7 @@ type (
 		RestParams             []string
 		Channel                string
 		ParentID               string
+		Username               string
 		UserIsBroadcasterOrMod bool
 	}
 	CommandHandler func(client *Client, args CommandArgs) *OutgoingMessage
@@ -96,6 +98,7 @@ func (c *Client) handleCommand(m *IncomingCommand) {
 		Channel:                m.Channel,
 		ParentID:               m.MsgID,
 		UserIsBroadcasterOrMod: m.Broadcaster || m.Mod,
+		Username:               m.Username,
 	})
 	if out != nil {
 		out.Channel = m.Channel
@@ -110,7 +113,7 @@ func (c *Client) Send(out *OutgoingMessage) {
 	reply := &irc.Message{
 		Command: "PRIVMSG",
 		Params: []string{
-			out.Channel,
+			fmt.Sprintf("#%s", out.Channel),
 			out.Message,
 		},
 	}
@@ -118,5 +121,6 @@ func (c *Client) Send(out *OutgoingMessage) {
 		reply.Tags = make(irc.Tags)
 		reply.Tags["reply-parent-msg-id"] = irc.TagValue(out.ParentID)
 	}
+	logrus.WithField("irc_msg", reply.String()).Info("message send")
 	c.ircClient.WriteMessage(reply)
 }
