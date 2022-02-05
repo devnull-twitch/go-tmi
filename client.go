@@ -33,12 +33,14 @@ type (
 	}
 
 	IncomingMessage struct {
-		Message     string
-		Username    string
-		Channel     string
-		MsgID       string
-		Broadcaster bool
-		Mod         bool
+		Message       string
+		Username      string
+		Channel       string
+		MsgID         string
+		ParentID      string
+		ReplyUsername string
+		Broadcaster   bool
+		Mod           bool
 	}
 )
 
@@ -80,10 +82,20 @@ func New(username, token, commandMarkerChar string) (*Client, error) {
 			}
 
 			if m.Command == "PRIVMSG" {
+				msgStr := m.Param(1)
+				var replyUsername string
+				if len(msgStr) > 1 && msgStr[0:1] == "@" && strings.Contains(msgStr, " ") {
+					si := strings.Index(msgStr, " ")
+					replyUsername = msgStr[1:si]
+					if len(msgStr) > si+1 {
+						msgStr = msgStr[si+1:]
+					}
+				}
 				msg := IncomingMessage{
-					Channel:  m.Param(0)[1:],
-					Message:  m.Param(1),
-					Username: m.User,
+					Channel:       m.Param(0)[1:],
+					Message:       msgStr,
+					Username:      m.User,
+					ReplyUsername: replyUsername,
 				}
 				if len(m.Tags) > 0 {
 					for tagName, tagValue := range m.Tags {
@@ -96,13 +108,16 @@ func New(username, token, commandMarkerChar string) (*Client, error) {
 						if tagName == "id" {
 							msg.MsgID = string(tagValue)
 						}
+						if tagName == "reply-parent-msg-id" {
+							msg.ParentID = string(tagValue)
+						}
 					}
 				}
 
-				if m.Param(1)[0:1] == commandMarkerChar {
+				if msgStr[0:1] == commandMarkerChar {
 					incoming := &IncomingCommand{IncomingMessage: msg}
 
-					params := strings.Split(m.Param(1)[1:], " ")
+					params := strings.Split(msgStr[1:], " ")
 					incoming.Command = params[0]
 					incoming.Params = params[1:]
 					tmiClient.handleCommand(incoming)

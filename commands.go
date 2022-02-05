@@ -16,12 +16,9 @@ type (
 		Validate func(string) bool
 	}
 	CommandArgs struct {
-		Parameters             map[string]string
-		RestParams             []string
-		Channel                string
-		ParentID               string
-		Username               string
-		UserIsBroadcasterOrMod bool
+		IncomingMessage
+		Parameters map[string]string
+		RestParams []string
 	}
 	CommandHandler func(client *Client, args CommandArgs) *OutgoingMessage
 	Command        struct {
@@ -93,12 +90,9 @@ func (c *Client) handleCommand(m *IncomingCommand) {
 	}
 
 	out := cmd.Handler(c, CommandArgs{
-		Parameters:             pmap,
-		RestParams:             restParams,
-		Channel:                m.Channel,
-		ParentID:               m.MsgID,
-		UserIsBroadcasterOrMod: m.Broadcaster || m.Mod,
-		Username:               m.Username,
+		IncomingMessage: m.IncomingMessage,
+		Parameters:      pmap,
+		RestParams:      restParams,
 	})
 	if out != nil {
 		out.Channel = m.Channel
