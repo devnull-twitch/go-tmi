@@ -117,7 +117,41 @@ func New(username, token, commandMarkerChar string) (*Client, error) {
 				if msgStr[0:1] == commandMarkerChar {
 					incoming := &IncomingCommand{IncomingMessage: msg}
 
-					params := strings.Split(msgStr[1:], " ")
+					params := make([]string, 0)
+					strReader := strings.NewReader(msgStr[1:])
+
+					currentParam := &strings.Builder{}
+					inQuotes := false
+					for strReader.Len() > 0 {
+						char, _, err := strReader.ReadRune()
+						if err != nil {
+							logrus.WithError(err).Error("error reading chat message")
+							return
+						}
+
+						switch char {
+						case ' ':
+							if inQuotes {
+								currentParam.WriteRune(char)
+							} else {
+								if currentParam.Len() <= 0 {
+									continue
+								} else {
+									params = append(params, currentParam.String())
+									currentParam.Reset()
+								}
+							}
+						case '"':
+							inQuotes = !inQuotes
+						default:
+							currentParam.WriteRune(char)
+						}
+					}
+
+					if currentParam.Len() > 0 {
+						params = append(params, currentParam.String())
+					}
+
 					incoming.Command = params[0]
 					incoming.Params = params[1:]
 					tmiClient.handleCommand(incoming)

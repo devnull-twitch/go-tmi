@@ -77,7 +77,7 @@ func (c *Client) handleCommand(m *IncomingCommand) {
 		pl := l.WithField("param", paramConfig.Name)
 		_, hasParamVal := pmap[paramConfig.Name]
 		if !hasParamVal && paramConfig.Required {
-			pl.Warn("missing required param")
+			pl.WithField("params", pmap).Warn("missing required param")
 			return
 		}
 		if !hasParamVal && paramConfig.Default != nil {
@@ -115,6 +115,6 @@ func (c *Client) Send(out *OutgoingMessage) {
 		reply.Tags = make(irc.Tags)
 		reply.Tags["reply-parent-msg-id"] = irc.TagValue(out.ParentID)
 	}
-	logrus.WithField("irc_msg", reply.String()).Info("message send")
+	logrus.WithField("irc_msg", reply.String()).Debug("message send")
 	c.ircClient.WriteMessage(reply)
 }
