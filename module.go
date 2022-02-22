@@ -12,11 +12,6 @@ type (
 		MessageTrigger(client *Client, incoming *IncomingMessage) *ModuleArgs
 		Handler(client *Client, args ModuleArgs) *OutgoingMessage
 	}
-	ModCommandHandler func(client *Client, m Module, args CommandArgs) *OutgoingMessage
-	ModuleCommand     struct {
-		Command
-		ModuleCommandHandler ModCommandHandler
-	}
 )
 
 func CreateTimeTrigger(interval time.Duration) <-chan *ModuleArgs {
@@ -43,13 +38,6 @@ func WrapTriggerCondition(trigger <-chan *ModuleArgs, checkFn func(*ModuleArgs) 
 	}()
 
 	return filtered
-}
-
-func (c *Client) AddModuleCommand(m Module, mcmd ModuleCommand) {
-	mcmd.Command.Handler = func(client *Client, args CommandArgs) *OutgoingMessage {
-		return mcmd.ModuleCommandHandler(client, m, args)
-	}
-	c.AddCommand(mcmd.Command)
 }
 
 func (c *Client) AddModule(m Module) {

@@ -19,6 +19,7 @@ type (
 		IncomingMessage
 		Parameters map[string]string
 		RestParams []string
+		Module     Module
 	}
 	CommandHandler func(client *Client, args CommandArgs) *OutgoingMessage
 	Command        struct {
@@ -26,8 +27,10 @@ type (
 		Description              string
 		Params                   []Parameter
 		Handler                  CommandHandler
+		SubCommands              []Command
 		RequiresBroadcasterOrMod bool
 		AllowRestParams          bool
+		Module                   Module
 	}
 )
 
@@ -58,9 +61,20 @@ func (c *Client) handleCommand(m *IncomingCommand) {
 		return
 	}
 
+	mod := cmd.Module
+	rawParams := m.Params
+	for _, subCmd := range cmd.SubCommands {
+		if len(rawParams) > 0 {
+			if subCmd.Name == rawParams[0] {
+				cmd = subCmd
+				rawParams = rawParams[1:]
+			}
+		}
+	}
+
 	pmap := make(map[string]string)
 	restParams := make([]string, 0)
-	for index, str := range m.Params {
+	for index, str := range rawParams {
 		if len(cmd.Params) <= index {
 			if !cmd.AllowRestParams {
 				l.Warn("too many params and rest not allowed")
@@ -93,6 +107,7 @@ func (c *Client) handleCommand(m *IncomingCommand) {
 		IncomingMessage: m.IncomingMessage,
 		Parameters:      pmap,
 		RestParams:      restParams,
+		Module:          mod,
 	})
 	if out != nil {
 		out.Channel = m.Channel
