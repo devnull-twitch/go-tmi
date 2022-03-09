@@ -31,6 +31,7 @@ type (
 		RequiresBroadcasterOrMod bool
 		AllowRestParams          bool
 		Module                   Module
+		AcceptanceCheck          func(*IncomingCommand) bool
 	}
 )
 
@@ -53,6 +54,11 @@ func (c *Client) handleCommand(m *IncomingCommand) {
 	cmd, exists := c.commands[strings.ToLower(m.Command)]
 	if !exists {
 		l.Info("unknown command")
+		return
+	}
+
+	if cmd.AcceptanceCheck != nil && !cmd.AcceptanceCheck(m) {
+		l.Info("command disabled for context")
 		return
 	}
 
