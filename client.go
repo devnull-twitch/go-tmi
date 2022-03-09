@@ -41,6 +41,8 @@ type (
 		ReplyUsername string
 		Broadcaster   bool
 		Mod           bool
+		Subscriber    bool
+		VIP           bool
 	}
 )
 
@@ -104,6 +106,15 @@ func New(username, token, commandMarkerChar string) (*Client, error) {
 						}
 						if tagName == "mod" && tagValue == "1" {
 							msg.Mod = true
+						}
+						if tagName == "subscriber" && tagValue == "1" {
+							msg.Subscriber = true
+						}
+						if tagName == "badges" && strings.Contains(string(tagValue), "vip") {
+							msg.Subscriber = true
+						}
+						if tagName == "badges" && strings.Contains(string(tagValue), "founder") {
+							msg.VIP = true
 						}
 						if tagName == "id" {
 							msg.MsgID = string(tagValue)
