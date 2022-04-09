@@ -47,7 +47,10 @@ type (
 )
 
 func New(username, token, commandMarkerChar string) (*Client, error) {
-	conn, err := tls.Dial("tcp", "irc.chat.twitch.tv:6697", &tls.Config{})
+	conn, err := tls.Dial("tcp", "irc.chat.twitch.tv:6697", &tls.Config{
+		MinVersion: tls.VersionTLS12,
+		MaxVersion: 0,
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -147,10 +150,10 @@ func New(username, token, commandMarkerChar string) (*Client, error) {
 							} else {
 								if currentParam.Len() <= 0 {
 									continue
-								} else {
-									params = append(params, currentParam.String())
-									currentParam.Reset()
 								}
+
+								params = append(params, currentParam.String())
+								currentParam.Reset()
 							}
 						case '"':
 							inQuotes = !inQuotes
